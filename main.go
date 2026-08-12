@@ -41,24 +41,72 @@ func Match(result chan<- int, channel chan PlayerInfo) {
 
 	//diciamo al main chi ha vinto
 	if (sum%2 == 0 && choice_pl1 == even) || (sum%2 != 0 && choice_pl1 == odd) {
+		fmt.Printf("Player %d and Player %d: FIGHT!\nWinner: %d\n", pl1.id, pl2.id, pl1.id)
 		result <- pl1.id
 	} else {
+		fmt.Printf("Player %d and Player %d: FIGHT!\nWinner: %d\n", pl1.id, pl2.id, pl2.id)
 		result <- pl2.id
 	}
 }
 
-func main() {
-	m := 4
+func isPowerOfTwo(n int) bool {
+	return n > 0 && (n&(n-1)) == 0
+}
 
-	channels := make([]chan PlayerInfo, 2)
-	result := make(chan int)
+func round(m int, players []int) []int {
+	matchRoom := make([]chan PlayerInfo, m/2)
+	results := make(chan int)
 
 	for i := 0; i < m; i += 2 {
-		channels[i] = make(chan PlayerInfo)
+		matchRoom[i/2] = make(chan PlayerInfo)
 
-		go Player(i, channels[i/2])
-		go Player(i+1, channels[i/2])
+		go Player(players[i], matchRoom[i/2])
+		go Player(players[i+1], matchRoom[i/2])
 
-		go Match(result, channels[i/2])
+		go Match(results, matchRoom[i/2])
 	}
+
+	var nextRoundPlayers []int
+
+	for i := 0; i < m/2; i++ { // m/2 è il numero di matches in un round
+		winner := <-results
+		nextRoundPlayers = append(nextRoundPlayers, winner)
+	}
+
+	return nextRoundPlayers
+}
+
+func setup() (int, []int) {
+	var m int
+
+	fmt.Print("Insert number of players: ")
+	fmt.Scanln(&m)
+
+	for !isPowerOfTwo(m) {
+		fmt.Print("Not valid! Insert number of players (pow of 2): ")
+		fmt.Scanln(&m)
+	}
+
+	var players []int
+
+	for i := 0; i < m; i++ {
+		players = append(players, i)
+	}
+
+	return m, players
+}
+
+func main() {
+
+	m, players := setup()
+
+	for i := 1; m >= 2; i++ {
+		fmt.Printf("\nSTARTING ROUND %d (remaining players: %d)\n", i, len(players))
+		players = round(m, players)
+
+		m = m / 2
+	}
+
+	fmt.Printf("the winner of the tournament is: %d", players[0])
+
 }
