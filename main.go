@@ -14,11 +14,10 @@ type PlayerInfo struct {
 }
 
 func Player(id int, channel chan<- PlayerInfo) {
-	//send che manda id e numero
 	num := rand.Intn(6)
 	fmt.Printf("[Player %d] my number is %d \n", id, num)
 
-	channel <- PlayerInfo{id, num}
+	channel <- PlayerInfo{id, num} //send che manda id e numero al match
 }
 
 func Match(result chan<- int, channel chan PlayerInfo) {
@@ -39,7 +38,7 @@ func Match(result chan<- int, channel chan PlayerInfo) {
 		fmt.Printf("[player %d] is even\n", pl2.id)
 	}
 
-	//diciamo al main chi ha vinto
+	//diciamo al round chi ha vinto
 	if (sum%2 == 0 && choice_pl1 == even) || (sum%2 != 0 && choice_pl1 == odd) {
 		fmt.Printf("Player %d and Player %d: FIGHT!\nWinner: %d\n", pl1.id, pl2.id, pl1.id)
 		result <- pl1.id
@@ -50,9 +49,11 @@ func Match(result chan<- int, channel chan PlayerInfo) {
 }
 
 func isPowerOfTwo(n int) bool {
+	//controlla se il numero è una potenza di 2
 	return n > 0 && (n&(n-1)) == 0
 }
 
+// funzione che gestisce singolarmente ciascun round. Crea m/2 match
 func round(m int, players []int) []int {
 	matchRoom := make([]chan PlayerInfo, m/2)
 	results := make(chan int)
@@ -70,14 +71,14 @@ func round(m int, players []int) []int {
 
 	for i := 0; i < m/2; i++ { // m/2 è il numero di matches in un round
 		winner := <-results
-		nextRoundPlayers = append(nextRoundPlayers, winner)
+		nextRoundPlayers = append(nextRoundPlayers, winner) //lista di giocatori aggiornata con soli vincitori
 	}
 
 	return nextRoundPlayers
 }
 
 func setup() (int, []int) {
-	var m int
+	var m int //numero giocatori. deve essere una potenza di 2
 
 	fmt.Print("Insert number of players: ")
 	fmt.Scanln(&m)
@@ -98,15 +99,15 @@ func setup() (int, []int) {
 
 func main() {
 
+	//setup della partita di gioco. m: numero giocatori. players: lista di giocatori
 	m, players := setup()
 
 	for i := 1; m >= 2; i++ {
 		fmt.Printf("\nSTARTING ROUND %d (remaining players: %d)\n", i, len(players))
 		players = round(m, players)
 
-		m = m / 2
+		m = m / 2 //ad ogni round il numero di giocatori dimezza
 	}
 
 	fmt.Printf("the winner of the tournament is: %d", players[0])
-
 }
